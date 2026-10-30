@@ -7,154 +7,115 @@ namespace CTDLGT_Buoi03_31251022117.Bai1
 {
     internal class Bai1
     {
-        static void Main()
+        // Trả về -1 nếu chuỗi hợp lệ, ngược lại thì về chỉ số của vị trí lỗi đầu tiên.
+        static int KiemTraDauNgoac(string chuoiDauVao)
         {
-            // Thiết lập bảng mã UTF-8 để màn hình Console hiển thị đúng các ký tự tiếng Việt có dấu.
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            // Lưu cặp (loại ngoặc, vị trí) vào Stack để đối chiếu với ngoặc đóng theo LIFO.
+            var nganXepChoDong = new Stack<(char loaiNgoac, int viTriXuatHien)>();
 
-            // Duy trì vòng lặp vô hạn giúp người dùng thực hiện kiểm thử nhiều ca liên tục mà không cần chạy lại chương trình.
-            while (true)
+            // Duyệt qua từng ký tự của chuỗi từ trái sang phải để kiểm tra tuần tự.
+            for (int chiSoHienTai = 0; chiSoHienTai < chuoiDauVao.Length; chiSoHienTai++)
             {
-                Console.WriteLine("1. Tự nhập chuỗi ký tự");
-                Console.WriteLine("2. Chạy tự động Ca lớn 9 (500k cặp ngoặc)");
-                Console.WriteLine("3. Chạy tự động Ca lớn 10 (1 triệu ngoặc mở)");
-                Console.WriteLine("4. Thoát chương trình");
-                Console.Write("Nhập lựa chọn của bạn (1-4): ");
+                // Lấy ra ký tự tại vị trí hiện tại để phân loại xử lý.
+                char kyTuHienTai = chuoiDauVao[chiSoHienTai];
 
-                // Đọc lựa chọn từ bàn phím, nếu null thì thay bằng chuỗi rỗng nhằm tránh lỗi sập chương trình.
-                string luaChon = Console.ReadLine() ?? "";
-
-                // Xử lý kịch bản 1: Người dùng tự nhập dữ liệu kiểm thử thủ công từ bàn phím.
-                if (luaChon == "1")
-                {
-                    Console.Write("Nhập chuỗi ký tự cần kiểm tra: ");
-                    // Đọc toàn bộ chuỗi ký tự do người dùng nhập để chuẩn bị đưa vào hàm kiểm tra cấu trúc ngoặc.
-                    string chuoiNhap = Console.ReadLine() ?? "";
-
-                    // Gọi hàm thuật toán xử lý chuỗi vừa nhập và hứng chuỗi thông báo kết quả trả về.
-                    string ketQuaNguoiDung = KiemTraNgoacCanBang(chuoiNhap);
-                    // In kết quả kiểm tra lên màn hình cho người dùng đối chiếu tính đúng đắn.
-                    Console.WriteLine($"-> Kết quả: {ketQuaNguoiDung}");
-                }
-                // Xử lý kịch bản 2: Đo hiệu năng tự động với chuỗi lớn gồm 1 triệu ký tự đối xứng hoàn hảo.
-                else if (luaChon == "2")
-                {
-                    Console.WriteLine("Đang sinh chuỗi và kiểm thử Ca 9, vui lòng đợi...");
-                    // Kích hoạt thu gom rác chủ động và đợi hoàn tất để giải phóng bộ nhớ, tránh sai số do tài nguyên tồn dư trước khi đo.
-                    GC.Collect(); GC.WaitForPendingFinalizers();
-
-                    // Khởi động bộ đếm thời gian với độ chính xác cao ngay trước khi cấp phát dữ liệu và thực thi thuật toán.
-                    Stopwatch boDoThoiGian9 = Stopwatch.StartNew();
-                    // Tạo một chuỗi lớn bằng cách ghép liên tiếp nửa triệu ngoặc mở và nửa triệu ngoặc đóng để thử nghiệm ca thông thường quy mô lớn.
-                    string chuoiCa9 = new string('(', 500000) + new string(')', 500000);
-                    // Thực thi thuật toán trên chuỗi cực đại vừa sinh để kiểm tra xem có vượt quá giới hạn thời gian chạy hay không.
-                    string ketQuaCa9 = KiemTraNgoacCanBang(chuoiCa9);
-                    // Dừng bộ đếm thời gian ngay khi hàm thuật toán hoàn thành việc xử lý dữ liệu.
-                    boDoThoiGian9.Stop();
-
-                    Console.WriteLine($"-> Kết quả Ca 9: {ketQuaCa9}");
-                    // In tổng thời gian chạy thực tế dưới dạng số thực lấy 4 chữ số thập phân để sinh viên điền vào bảng thực nghiệm.
-                    Console.WriteLine($"-> Thời gian chạy: {boDoThoiGian9.Elapsed.TotalSeconds:F4} giây");
-                }
-                // Xử lý kịch bản 3: Đo hiệu năng tự động với chuỗi lỗi nặng nhất làm đẩy Stack lên độ sâu tối đa.
-                else if (luaChon == "3")
-                {
-                    Console.WriteLine("Đang sinh chuỗi và kiểm thử Ca 10, vui lòng đợi...");
-                    // Thu dọn toàn bộ các đối tượng rác trong bộ nhớ HEAP nhằm đảm bảo tính công bằng và chính xác cho phép đo thời gian tiếp theo.
-                    GC.Collect(); GC.WaitForPendingFinalizers();
-
-                    // Bắt đầu kích hoạt đồng hồ bấm giờ hệ thống để theo dõi sát sao thời gian phản hồi của ca kiểm thử biên.
-                    Stopwatch boDoThoiGian10 = Stopwatch.StartNew();
-                    // Sinh chuỗi chứa đúng 1 triệu dấu ngoặc mở nhằm ép Stack liên tục Push phần tử mà không hề Pop, đẩy dung lượng Stack lên cực hạn.
-                    string chuoiCa10 = new string('(', 1000000);
-                    // Chạy hàm kiểm tra trên chuỗi 1 triệu ngoặc mở để xác định khả năng chịu tải và tốc độ quét của Stack.
-                    string ketQuaCa10 = KiemTraNgoacCanBang(chuoiCa10);
-                    // Ngắt bộ đo thời gian ngay sau khi hàm kiểm tra hoàn tất việc rút kết luận và trả về kết quả.
-                    boDoThoiGian10.Stop();
-
-                    Console.WriteLine($"-> Kết quả Ca 10: {ketQuaCa10}");
-                    // Định dạng và hiển thị thời gian chạy tính bằng giây với 4 chữ số thập phân để chứng minh tốc độ xử lý đạt dưới 1 giây.
-                    Console.WriteLine($"-> Thời gian chạy: {boDoThoiGian10.Elapsed.TotalSeconds:F4} giây");
-                }
-                // Xử lý kịch bản 4: Người dùng kết thúc phiên làm việc.
-                else if (luaChon == "4")
-                {
-                    Console.WriteLine("Đã thoát chương trình. Tạm biệt!");
-                    // Phá vỡ vòng lặp vô hạn `while(true)` giúp luồng chính của ứng dụng dừng lại và đóng cửa sổ Console một cách an toàn.
-                    break;
-                }
-                // Xử lý tình huống lỗi: Người dùng gõ sai ký tự điều hướng menu.
-                else
-                {
-                    Console.WriteLine("Lựa chọn không hợp lệ! Vui lòng chọn lại từ 1 đến 4.");
-                }
-            }
-        }
-
-        // Định nghĩa hàm kiểm tra tính cân bằng cấu trúc ngoặc đạt độ phức tạp thời gian tuyến tính Θ(n).
-        static string KiemTraNgoacCanBang(string chuoiVao)
-        {
-            // Khởi tạo một Stack lưu Tuple gồm ký tự và vị trí ban đầu của nó nhằm giữ lại vết để báo lỗi chính xác khi thiếu ngoặc đóng tương ứng.
-            Stack<(char kyTu, int viTri)> nganXep = new Stack<(char kyTu, int viTri)>();
-
-            // Duyệt tuần tự từng ký tự trong chuỗi từ trái qua phải theo chỉ số tăng dần để thực hiện bộ lọc phân loại ngoặc.
-            for (int i = 0; i < chuoiVao.Length; i++)
-            {
-                // Trích xuất ký tự tại vị trí chỉ số hiện tại để giảm bớt chi phí truy xuất mảng nhiều lần trong các lệnh rẽ nhánh phía dưới.
-                char kyTuHienTai = chuoiVao[i];
-
-                // Áp dụng cơ chế LIFO: Ngoặc mở nào xuất hiện sau cùng sẽ nằm trên đỉnh Stack để chờ được khớp với ngoặc đóng xuất hiện đầu tiên.
+                // Nếu là ngoặc mở, tạm lưu lại để chờ tìm ngoặc đóng tương ứng.
                 if (kyTuHienTai == '(' || kyTuHienTai == '[' || kyTuHienTai == '{')
                 {
-                    // Đẩy cặp dữ liệu gồm ký tự ngoặc mở và vị trí `i` vào đỉnh ngăn xếp nhằm làm cơ sở đối chiếu loại và vị trí với ngoặc đóng sau này.
-                    nganXep.Push((kyTuHienTai, i));
+                    // Đẩy dấu ngoặc mở cùng vị trí của nó vào Stack để quản lý các ngoặc chưa được đóng.
+                    nganXepChoDong.Push((kyTuHienTai, chiSoHienTai));
                 }
-                // Xử lý tình huống khi con trỏ duyệt trúng một trong các loại ký tự thuộc nhóm ngoặc đóng.
+                // Nếu là ngoặc đóng, kiểm tra cặp ngoặc gần nhất.
                 else if (kyTuHienTai == ')' || kyTuHienTai == ']' || kyTuHienTai == '}')
                 {
-                    // LỖI ĐÓNG THỪA: Gặp ngoặc đóng nhưng Stack trống rỗng, chứng tỏ không có bất kỳ ngoặc mở nào phía trước để ghép cặp.
-                    if (nganXep.Count == 0)
-                    {
-                        // Trả về ngay chuỗi thông báo lỗi kèm vị trí chỉ số `i` hiện tại và lập tức ngắt hàm, không cần duyệt tiếp phần chuỗi còn lại.
-                        return $"SAI tai vi tri {i}";
-                    }
+                    // Stack rỗng nghĩa là có ngoặc đóng nhưng trước đó không có ngoặc mở nào chờ sẵn.
+                    if (nganXepChoDong.Count == 0)
+                        return chiSoHienTai;
 
-                    // Truy xuất thông tin của dấu ngoặc mở nằm ở đỉnh ngăn xếp để kiểm tra tính tương thích loại mà không xóa phần tử đó ra khỏi Stack.
-                    var dinh = nganXep.Peek();
+                    // Lấy ra và xóa khỏi Stack dấu ngoặc mở nằm ở đỉnh vì nó là ngoặc mở gần nhất cần được đóng.
+                    var ngoacMoGanNhat = nganXepChoDong.Pop();
 
-                    // Tiến hành đối chiếu xem ký tự ngoặc đóng hiện tại có tạo thành một cặp đồng dạng, hợp lệ với dấu ngoặc mở ở đỉnh Stack hay không.
-                    if ((kyTuHienTai == ')' && dinh.kyTu == '(') ||
-                        (kyTuHienTai == ']' && dinh.kyTu == '[') ||
-                        (kyTuHienTai == '}' && dinh.kyTu == '{'))
-                    {
-                        // Loại bỏ dấu ngoặc mở ra khỏi ngăn xếp vì nó đã tìm thấy đúng ngoặc đóng tương ứng, giúp thu hẹp phạm vi kiểm tra các cặp ngoặc bên ngoài.
-                        nganXep.Pop();
-                    }
-                    // Xử lý tình huống hai dấu ngoặc không cùng chủng loại (ví dụ dấu đóng đan xen sai quy tắc).
-                    else
-                    {
-                        // LỖI ĐÓNG SAI LOẠI: Ngoặc đóng hiện tại phá vỡ cấu trúc lồng nhau hợp lệ, trả về vị trí lỗi tại chính vị trí ngoặc đóng sai này.
-                        return $"SAI tai vi tri {i}";
-                    }
+                    // Nếu loại ngoặc mở vừa lấy ra không khớp cặp với ngoặc đóng hiện tại.
+                    if (!LaCapNgoacHopLe(ngoacMoGanNhat.loaiNgoac, kyTuHienTai))
+                        return chiSoHienTai;
                 }
             }
 
-            // LỖI MỞ CHƯA ĐÓNG: Vòng lặp duyệt hết toàn bộ chuỗi ký tự nhưng kích thước Stack vẫn lớn hơn 0, nghĩa là tồn tại ngoặc mở không được đóng.
-            if (nganXep.Count > 0)
+            // Sau khi duyệt hết chuỗi, nếu Stack vẫn còn phần tử nghĩa là có dấu ngoặc mở dư.
+            if (nganXepChoDong.Count > 0)
             {
-                // Khởi tạo biến lưu vết vị trí với giá trị mặc định để chuẩn bị hứng dữ liệu từ các phần tử được rút ra từ ngăn xếp.
-                int viTriSomNhat = -1;
-                // Thực hiện rút dần tất cả phần tử trong Stack từ đỉnh xuống đáy nhằm tìm ra dấu ngoặc mở nằm ở vị trí sâu nhất (đáy Stack).
-                while (nganXep.Count > 0)
+                // Khởi tạo giá trị lớn nhất có thể để chuẩn bị cho thuật toán tìm vị trí nhỏ nhất (xuất hiện sớm nhất).
+                int viTriLoiDauTien = int.MaxValue;
+
+                // Duyệt qua toàn bộ các ngoặc mở còn sót lại trong Stack để tìm xem ngoặc nào đã mở ra sớm nhất mà chưa đóng.
+                foreach (var ngoacChuaDong in nganXepChoDong)
                 {
-                    // Liên tục cập nhật vị trí của phần tử vừa Pop, phần tử cuối cùng được lấy ra từ đáy chính là dấu ngoặc mở xuất hiện sớm nhất trong chuỗi.
-                    viTriSomNhat = nganXep.Pop().viTri;
+                    // Nếu vị trí của ngoặc hiện tại nhỏ hơn mốc đã tìm thấy, cập nhật mốc mới để lấy vị trí lỗi đầu tiên.
+                    if (ngoacChuaDong.viTriXuatHien < viTriLoiDauTien)
+                        viTriLoiDauTien = ngoacChuaDong.viTriXuatHien;
                 }
-                // Trả về chuỗi thông báo lỗi chỉ định chính xác vị trí của dấu ngoặc mở xuất hiện sớm nhất không được đóng theo đúng yêu cầu đề bài.
-                return $"SAI tai vi tri {viTriSomNhat}";
+
+                // Trả về vị trí của dấu ngoặc mở đầu tiên không được đóng trong chuỗi.
+                return viTriLoiDauTien;
             }
-            // Chuỗi vượt qua mọi chốt chặn kiểm tra lỗi, chứng tỏ tất cả các ngoặc đều được mở và đóng hoàn toàn khớp cặp, đúng thứ tự quy định.
-            return "HOP LE";
+
+            // Stack rỗng và không vi phạm các điều kiện trên nghĩa là mọi dấu ngoặc đều được đóng/mở đúng cặp.
+            return -1;
+        }
+
+        // Nhận vào một ngoặc mở và một ngoặc đóng để xác định chúng có cùng một loại hay không.
+        static bool LaCapNgoacHopLe(char ngoacMo, char ngoacDong)
+        {
+            // Trả về true nếu thuộc một trong ba cặp ngoặc tiêu chuẩn (), [], {}, ngược lại trả về false.
+            return (ngoacMo == '(' && ngoacDong == ')')
+                || (ngoacMo == '[' && ngoacDong == ']')
+                || (ngoacMo == '{' && ngoacDong == '}');
+        }
+
+        static void Main1()
+        {
+            // Nhập chuỗi cần kiểm tra
+            Console.Write("Nhập chuỗi cần kiểm tra: ");
+            // Chuỗi đọc từ bàn phím
+            string chuoiCanKiemTra = Console.ReadLine() ?? "";
+            // Đo thời gian thực hiện thuật toán kiểm tra
+            var stopwatch = Stopwatch.StartNew();
+            int ketQuaKiemTra = KiemTraDauNgoac(chuoiCanKiemTra);
+            stopwatch.Stop();
+            // In kết quả và vị trí lỗi nếu chuỗi không hợp lệ
+            Console.WriteLine(ketQuaKiemTra == -1 ? "HỢP LỆ" : $"SAI tại vị trí {ketQuaKiemTra}");
+            Console.WriteLine($"Thời gian: {stopwatch.Elapsed.TotalMilliseconds:F3} ms");
+
+            // Ca 9
+            string input_Ca9 = new string('(', 500000) + new string(')', 500000);
+
+            Console.WriteLine("CA 9 ");
+
+            //// Khởi tạo đồng hồ bấm giờ
+            //var stopwatch = Stopwatch.StartNew();
+
+            //// Truyền biến 'input_Ca9' vào đây để kiểm tra dữ liệu lớn
+            //int ketQuaKiemTra = KiemTraDauNgoac(input_Ca9);
+
+            //stopwatch.Stop();
+
+            //// In kết quả
+            //Console.WriteLine(ketQuaKiemTra == -1 ? "HỢP LỆ" : $"SAI tại vị trí {ketQuaKiemTra}");
+            //Console.WriteLine($"Thời gian: {stopwatch.Elapsed.TotalSeconds:F3} giây");
+            //Console.WriteLine();
+
+            // Ca 10
+            string input_Ca10 = new string('(', 1000000);
+
+            Console.WriteLine("CA 10");
+            //stopwatch.Restart(); // Reset và chạy lại đồng hồ
+
+            //int ketQuaKiemTra10 = KiemTraDauNgoac(input_Ca10);
+
+            //stopwatch.Stop();
+
+            //Console.WriteLine(ketQuaKiemTra10 == -1 ? "HỢP LỆ" : $"SAI tại vị trí {ketQuaKiemTra10}");
+            //Console.WriteLine($"Thời gian: {stopwatch.Elapsed.TotalSeconds:F3} giây");
         }
     }
 }
